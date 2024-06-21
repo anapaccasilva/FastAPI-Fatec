@@ -4,59 +4,91 @@ from unittest.mock import Mock
 from repositories.task_repositories import task_repository
 from models.task_model import Task
 
+# Fixture do pytest para mockar a sessão do banco de dados
 @pytest.fixture
 def db():
     return Mock(spec=Session)
 
+# Teste para a criação de uma nova tarefa
 def test_create_task(db):
+    # Dados da tarefa a ser criada
     task_data = Task(titulo="New Task", descricao="Task Description", status="Pendente")
+    # Configura o mock para os métodos da sessão do banco de dados
     db.add.return_value = None
     db.commit.return_value = None
     db.refresh.return_value = task_data
 
+    # Chama o repositório para criar a tarefa
     task = task_repository.create_task(db, task_data)
 
+    # Verifica se a tarefa foi criada com os dados corretos
     assert task.titulo == "New Task"
+    # Verifica se os métodos da sessão do banco de dados foram chamados corretamente
     db.add.assert_called_once_with(task_data)
     db.commit.assert_called_once()
     db.refresh.assert_called_once_with(task_data)
 
+# Teste para obter uma tarefa específica pelo ID
 def test_get_task(db):
+    # Dados da tarefa a ser obtida
     task_data = Task(id=1, titulo="Task 1", descricao="Description 1", status="Pendente")
+    # Configura o mock para retornar a tarefa desejada
     db.query.return_value.filter.return_value.first.return_value = task_data
 
+    # Chama o repositório para obter a tarefa pelo ID
     task = task_repository.get_task(db, 1)
 
+    # Verifica se a tarefa obtida possui os dados corretos
     assert task.titulo == "Task 1"
+    # Verifica se o método da sessão do banco de dados foi chamado corretamente
     db.query.return_value.filter.return_value.first.assert_called_once()
 
+# Teste para obter todas as tarefas
 def test_get_tasks(db):
+    # Dados das tarefas a serem obtidas
     task_data = [Task(id=1, titulo="Task 1", descricao="Description 1", status="Pendente")]
+    # Configura o mock para retornar a lista de tarefas
     db.query.return_value.offset.return_value.limit.return_value.all.return_value = task_data
 
+    # Chama o repositório para obter todas as tarefas
     tasks = task_repository.get_tasks(db)
 
+    # Verifica se a lista de tarefas obtida possui os dados corretos
     assert len(tasks) == 1
     assert tasks[0].titulo == "Task 1"
+    # Verifica se o método da sessão do banco de dados foi chamado corretamente
     db.query.return_value.offset.return_value.limit.return_value.all.assert_called_once()
 
+# Teste para atualizar uma tarefa específica pelo ID
 def test_update_task(db):
+    # Dados da tarefa a ser atualizada
     task_data = Task(id=1, titulo="Task 1", descricao="Description 1", status="Pendente")
+    # Dados atualizados da tarefa
     updated_data = {"titulo": "Updated Task", "descricao": "Updated Description", "status": "Concluída"}
+    # Configura o mock para retornar a tarefa a ser atualizada
     db.query.return_value.filter.return_value.first.return_value = task_data
 
+    # Chama o repositório para atualizar a tarefa
     task = task_repository.update_task(db, 1, updated_data)
 
+    # Verifica se a tarefa foi atualizada com os dados corretos
     assert task.titulo == "Updated Task"
+    # Verifica se os métodos da sessão do banco de dados foram chamados corretamente
     db.commit.assert_called_once()
     db.refresh.assert_called_once_with(task_data)
 
+# Teste para deletar uma tarefa específica pelo ID
 def test_delete_task(db):
+    # Dados da tarefa a ser deletada
     task_data = Task(id=1, titulo="Updated Task", descricao="Updated Description", status="Concluída")
+    # Configura o mock para retornar a tarefa a ser deletada
     db.query.return_value.filter.return_value.first.return_value = task_data
 
+    # Chama o repositório para deletar a tarefa
     task = task_repository.delete_task(db, 1)
     print(task.titulo)
+    # Verifica se a tarefa deletada possui os dados corretos
     assert task.titulo == "Updated Task"
+    # Verifica se os métodos da sessão do banco de dados foram chamados corretamente
     db.delete.assert_called_once_with(task_data)
     db.commit.assert_called_once()
